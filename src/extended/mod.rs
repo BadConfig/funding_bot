@@ -5,7 +5,7 @@ use itertools::Itertools;
 use reqwest::header::{ACCEPT, USER_AGENT};
 use serde_json::Value;
 
-use crate::Funding;
+use crate::{Exchange, Funding};
 
 pub async fn request_fundings() -> anyhow::Result<Vec<Funding>> {
     reqwest::Client::new()
@@ -32,6 +32,11 @@ pub async fn request_fundings() -> anyhow::Result<Vec<Funding>> {
                         .is_some()
                 })
                 .map(|v| Funding {
+                    best_ask: None,
+                    best_bid: None,
+                    exchange: Exchange::Extended,
+                    open_interest: None,
+
                     market_name: v.get("name").unwrap().as_str().unwrap().to_string(),
                     currency_name: v.get("assetName").unwrap().as_str().unwrap().to_string(),
                     funding_rate: v

@@ -9,6 +9,7 @@ use rust_decimal::Decimal;
 use teloxide::{dispatching::dialogue::GetChatId, prelude::*, types::Recipient};
 
 pub mod extended;
+pub mod hyperliquid;
 pub mod paradex;
 
 #[derive(Debug, Clone)]
@@ -16,6 +17,7 @@ pub enum Exchange {
     Paradex,
     Extended,
     Hyperliquid,
+    Vest,
 }
 
 #[derive(Debug, Clone)]
@@ -24,9 +26,9 @@ pub struct Funding {
     funding_rate: Decimal,
     market_name: String,
     exchange: Exchange,
-    open_interest: Decimal,
-    best_bid: Decimal,
-    best_ask: Decimal,
+    open_interest: Option<Decimal>,
+    best_bid: Option<Decimal>,
+    best_ask: Option<Decimal>,
 }
 
 #[derive(Debug, Clone)]

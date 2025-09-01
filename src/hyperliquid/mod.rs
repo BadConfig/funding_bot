@@ -31,7 +31,7 @@ pub async fn request_fundings() -> anyhow::Result<Vec<Funding>> {
                 .map(|v| Funding {
                     best_ask: None,
                     best_bid: None,
-                    exchange: Exchange::Paradex,
+                    exchange: Exchange::Hyperliquid,
                     open_interest: None,
 
                     market_name: v.get("symbol").unwrap().as_str().unwrap().to_string(),
