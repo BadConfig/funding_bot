@@ -3,6 +3,7 @@
 
 use anyhow::Context;
 use itertools::Itertools;
+use rust_decimal::Decimal;
 use serde_json::Value;
 
 use crate::{Exchange, Funding};
@@ -32,7 +33,14 @@ pub async fn request_fundings() -> anyhow::Result<Vec<Funding>> {
                     best_ask: None,
                     best_bid: None,
                     exchange: Exchange::Paradex,
-                    open_interest: None,
+                    open_interest: Some(
+                        v.get("open_interest")
+                            .unwrap()
+                            .as_str()
+                            .unwrap()
+                            .parse()
+                            .unwrap(),
+                    ),
 
                     market_name: v.get("symbol").unwrap().as_str().unwrap().to_string(),
                     currency_name: v
@@ -49,8 +57,9 @@ pub async fn request_fundings() -> anyhow::Result<Vec<Funding>> {
                         .unwrap()
                         .as_str()
                         .unwrap()
-                        .parse()
-                        .unwrap(),
+                        .parse::<Decimal>()
+                        .unwrap()
+                        / Decimal::from(8),
                 })
                 .collect_vec()
         })

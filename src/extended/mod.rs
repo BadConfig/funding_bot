@@ -35,7 +35,16 @@ pub async fn request_fundings() -> anyhow::Result<Vec<Funding>> {
                     best_ask: None,
                     best_bid: None,
                     exchange: Exchange::Extended,
-                    open_interest: None,
+                    open_interest: Some(
+                        v.get("marketStats")
+                            .unwrap()
+                            .get("openInterest")
+                            .unwrap()
+                            .as_str()
+                            .unwrap()
+                            .parse()
+                            .unwrap(),
+                    ),
 
                     market_name: v.get("name").unwrap().as_str().unwrap().to_string(),
                     currency_name: v.get("assetName").unwrap().as_str().unwrap().to_string(),

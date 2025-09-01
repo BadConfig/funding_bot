@@ -1,0 +1,71 @@
+name: Cached rust build
+on:
+  push:
+
+permissions:
+  contents: read
+  actions: write # require to delete cache
+
+jobs:
+  build-and-check-binaries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # this also does foundry install as it use submodules
+          submodules: recursive
+
+      - uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: musl-dev musl-tools pkg-config libssl-dev
+          version: 1.0
+
+      - run: rustup target add x86_64-unknown-linux-musl
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-all-crates: true
+          cache-on-failure: true
+          shared-key: "main_rust_build_cache"
+
+      - name: 🔨 Build
+        id: cargo-building
+        run: |
+          cargo build --release --target=x86_64-unknown-linux-musl --bin funding_bot
+
+          #  - name: 🔎 Test
+          #    id: cargo-testing
+          #    run: cargo test --release --target=x86_64-unknown-linux-musl -- --nocapture
+
+          #  - name: 🔎 Formatting check
+          #    id: cargo-formatting
+          #    run: cargo fmt --all --check
+
+          #  - name: 🔎 Clippy check
+          #    id: cargo-clippy
+          #    run: cargo clippy --all-targets --all-features --tests -- -D warnings
+
+      - run: du -sh target
+        continue-on-error: true
+
+      - run: du -sh ~/.cargo/registry
+        continue-on-error: true
+
+      - run: du -sh target/x86_64-unknown-linux-musl/release
+        continue-on-error: true
+
+      - name: Find commit short sha
+        id: commitsha
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      # build container
+      - name: Build the Docker image
+        run: |
+          docker build --build-arg="BIN=funding_bot" --tag badconfig/funding_bot:${{ steps.commitsha.outputs.sha_short }} --tag badconfig/funding_bot:latest .
+
+      - name: Login to dockerhub
+        run: docker login -u="${{ vars.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}"
+
+      - name: push image
+        run: |
+          docker push --all-tags badconfig/funding_bot

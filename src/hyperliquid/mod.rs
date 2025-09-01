@@ -3,54 +3,56 @@
 
 use anyhow::Context;
 use itertools::Itertools;
-use serde_json::Value;
+use serde_json::{Value, json};
 
 use crate::{Exchange, Funding};
 
 pub async fn request_fundings() -> anyhow::Result<Vec<Funding>> {
-    reqwest::get("https://api.prod.paradex.trade/v1/markets/summary?market=ALL")
+    reqwest::Client::new()
+        .post("https://api.hyperliquid.xyz/info")
+        .json(&json!({
+            "type": "metaAndAssetCtxs",
+        }))
+        .send()
         .await?
         .json()
         .await
         .map(|m: Value| {
-            m.get("results")
+            let meta = m
+                .get(0)
+                .unwrap()
+                .get("universe")
                 .unwrap()
                 .as_array()
-                .unwrap()
-                .iter()
-                .filter(|v| {
-                    v.get("symbol")
-                        .unwrap()
-                        .as_str()
-                        .unwrap()
-                        .split("-USD-PERP")
-                        .next()
-                        .is_some()
-                })
-                .filter(|v| v.get("symbol").unwrap().as_str().unwrap() != "USDC")
-                .map(|v| Funding {
+                .unwrap();
+            let stats = m.get(1).unwrap().as_array().unwrap();
+
+            meta.iter()
+                .zip(stats.iter())
+                .map(|(meta, stats)| Funding {
                     best_ask: None,
                     best_bid: None,
                     exchange: Exchange::Hyperliquid,
-                    open_interest: None,
 
-                    market_name: v.get("symbol").unwrap().as_str().unwrap().to_string(),
-                    currency_name: v
-                        .get("symbol")
-                        .unwrap()
-                        .as_str()
-                        .unwrap()
-                        .split("-USD-PERP")
-                        .next()
-                        .unwrap()
-                        .to_string(),
-                    funding_rate: v
-                        .get("funding_rate")
+                    market_name: meta.get("name").unwrap().as_str().unwrap().to_string(),
+                    currency_name: meta.get("name").unwrap().as_str().unwrap().to_string(),
+
+                    funding_rate: stats
+                        .get("funding")
                         .unwrap()
                         .as_str()
                         .unwrap()
                         .parse()
                         .unwrap(),
+                    open_interest: Some(
+                        stats
+                            .get("openInterest")
+                            .unwrap()
+                            .as_str()
+                            .unwrap()
+                            .parse()
+                            .unwrap(),
+                    ),
                 })
                 .collect_vec()
         })
