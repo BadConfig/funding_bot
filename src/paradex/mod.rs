@@ -27,9 +27,8 @@ pub async fn request_fundings() -> anyhow::Result<Vec<Funding>> {
                         .as_str()
                         .unwrap()
                         .split("-USD-PERP")
-                        .next()
+                        .nth(2)
                         .is_some()
-                        && v.get("symbol").unwrap().as_str().unwrap() != "USDC"
                 })
                 .map(|v| {
                     let ask: Decimal = v.get("ask").unwrap().as_str().unwrap().parse().unwrap();
