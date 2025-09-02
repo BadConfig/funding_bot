@@ -41,6 +41,7 @@ pub struct PositionCandidate {
     short_market: String,
     oi_long: Option<Decimal>,
     oi_short: Option<Decimal>,
+    spread: Option<Decimal>,
 }
 
 #[tokio::main]

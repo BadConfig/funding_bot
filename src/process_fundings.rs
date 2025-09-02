@@ -11,19 +11,41 @@ pub fn candidates_to_string(c: &[PositionCandidate]) -> String {
     c.iter()
         .map(|v| {
             format!(
-                "currency:          {}\ntotal funding:      {}\nAPY:            {}%\nLong on:           {:?}\nMarket:       {}\nOpen Interest:      {:?}\nShort on:             {:?}\nMarket:       {}\nOpen Interest:          {:?}\n",
+                "currency:          {}\n\
+total funding:  {}%h\n\
+APY:                {}%\n\
+Spread:         {}%\n\
+Long on:        {:?}\n\
+Long OI:        {}$\n\
+Short on:       {:?}\n\
+Short OI:       {}$\n",
                 v.currency_name,
-                v.total_funding.round_dp(6),
+                (v.total_funding * Decimal::from(100)).round_dp(6),
                 v.apy.round_dp(2),
+                v.spread.unwrap_or_default().round_dp(6),
                 v.long_on,
-                v.long_market,
-                v.oi_long.unwrap_or_default().round_dp(0),
+                format_short(v.oi_long.unwrap_or_default().round_dp(0)),
                 v.short_on,
-                v.short_market,
-                v.oi_short.unwrap_or_default().round_dp(0),
+                format_short(v.oi_short.unwrap_or_default().round_dp(0)),
             )
         })
         .join("---------------------------------\n")
+}
+
+fn format_short(n: Decimal) -> String {
+    let thousand = Decimal::from(1000);
+    let million = Decimal::from(1_000_000);
+    let billion = Decimal::from(1_000_000_000);
+
+    if n.abs() >= billion {
+        format!("{:.2}B", n / billion)
+    } else if n.abs() >= million {
+        format!("{:.2}M", n / million)
+    } else if n.abs() >= thousand {
+        format!("{:.2}K", n / thousand)
+    } else {
+        format!("{}", n.round_dp(2))
+    }
 }
 
 pub async fn fill_fundings(shared: Arc<Mutex<Vec<PositionCandidate>>>) -> anyhow::Result<()> {
@@ -77,6 +99,10 @@ pub async fn fill_fundings(shared: Arc<Mutex<Vec<PositionCandidate>>>) -> anyhow
                             apy: total_funding.abs() * Decimal::from(24 * 365 * 100),
                             oi_long: long_dex.open_interest,
                             oi_short: short_dex.open_interest,
+                            spread: long_dex
+                                .best_bid
+                                .zip(short_dex.best_ask)
+                                .map(|(l, s)| (l - s) * Decimal::from(100) / l),
                         }
                     })
             })
