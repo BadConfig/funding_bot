@@ -16,16 +16,20 @@ total funding:  {}%h\n\
 APY:                {}%\n\
 Spread:         {}%\n\
 Long on:        {:?}\n\
+Long Funding:   {}\
 Long OI:        {}$\n\
 Short on:       {:?}\n\
+Short Funding:  {}\
 Short OI:       {}$\n",
                 v.currency_name,
                 (v.total_funding * Decimal::from(100)).round_dp(6),
                 v.apy.round_dp(2),
                 v.spread.unwrap_or_default().round_dp(6),
                 v.long_on,
+                v.long_funding,
                 format_short(v.oi_long.unwrap_or_default().round_dp(0)),
                 v.short_on,
+                v.short_funding,
                 format_short(v.oi_short.unwrap_or_default().round_dp(0)),
             )
         })
@@ -90,6 +94,8 @@ pub async fn fill_fundings(shared: Arc<Mutex<Vec<PositionCandidate>>>) -> anyhow
                             (v2, v1)
                         };
                         PositionCandidate {
+                            long_funding: long_dex.funding_rate,
+                            short_funding: short_dex.funding_rate,
                             currency_name: currency_name.clone(),
                             long_on: long_dex.exchange.clone(),
                             long_market: long_dex.market_name.clone(),

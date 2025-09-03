@@ -36,8 +36,10 @@ pub struct PositionCandidate {
     total_funding: Decimal,
     apy: Decimal,
     long_on: Exchange,
+    long_funding: Decimal,
     long_market: String,
     short_on: Exchange,
+    short_funding: Decimal,
     short_market: String,
     oi_long: Option<Decimal>,
     oi_short: Option<Decimal>,
@@ -56,25 +58,30 @@ async fn main() -> anyhow::Result<()> {
 
     let fundings = Arc::new(Mutex::new(Vec::<PositionCandidate>::new()));
 
-    {
+    let h = {
         let fundings = fundings.clone();
         tokio::spawn(async move {
             process_fundings::fill_fundings(fundings.clone())
                 .await
                 .unwrap()
-        });
-    }
+        })
+    };
 
     let ctx = Arc::new(HandlerContext {
         position_candidates: fundings.clone(),
     });
 
-    Dispatcher::builder(bot, bot::schema())
-        .dependencies(dptree::deps![ctx]) // 👈 inject app context here
-        .enable_ctrlc_handler()
-        .build()
-        .dispatch()
-        .await;
+    {
+        tokio::spawn(async move {
+            Dispatcher::builder(bot, bot::schema())
+                .dependencies(dptree::deps![ctx]) // 👈 inject app context here
+                .enable_ctrlc_handler()
+                .build()
+                .dispatch()
+                .await;
+        });
+    }
 
+    h.await.unwrap();
     Ok(())
 }
