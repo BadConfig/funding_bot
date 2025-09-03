@@ -26,10 +26,10 @@ Short OI:       {}$\n",
                 v.apy.round_dp(2),
                 v.spread.unwrap_or_default().round_dp(6),
                 v.long_on,
-                v.long_funding,
+                (v.long_funding * Decimal::from(100)).round_dp(6),
                 format_short(v.oi_long.unwrap_or_default().round_dp(0)),
                 v.short_on,
-                v.short_funding,
+                (v.short_funding * Decimal::from(100)).round_dp(6),
                 format_short(v.oi_short.unwrap_or_default().round_dp(0)),
             )
         })
