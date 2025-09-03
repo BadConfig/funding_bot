@@ -88,7 +88,7 @@ pub async fn fill_fundings(shared: Arc<Mutex<Vec<PositionCandidate>>>) -> anyhow
                         let v1 = &f[0];
                         let v2 = &f[1];
                         let total_funding = v1.funding_rate - v2.funding_rate;
-                        let (long_dex, short_dex) = if total_funding.is_sign_positive() {
+                        let (long_dex, short_dex) = if total_funding.is_sign_negative() {
                             (v1, v2)
                         } else {
                             (v2, v1)
