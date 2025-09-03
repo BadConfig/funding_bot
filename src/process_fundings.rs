@@ -16,10 +16,10 @@ total funding:  {}%h\n\
 APY:                {}%\n\
 Spread:         {}%\n\
 Long on:        {:?}\n\
-Long Funding:   {}\
+Long Funding:   {}\n\
 Long OI:        {}$\n\
 Short on:       {:?}\n\
-Short Funding:  {}\
+Short Funding:  {}\n\
 Short OI:       {}$\n",
                 v.currency_name,
                 (v.total_funding * Decimal::from(100)).round_dp(6),
